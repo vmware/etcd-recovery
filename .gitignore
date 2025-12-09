@@ -1,0 +1,7 @@
+/etcd-recovery
+/bin
+/release
+.idea/*
+pkg/ssh/testdata/*.txt
+pkg/ssh/testdata/tmp
+.DS_store
