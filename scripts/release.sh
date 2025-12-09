@@ -5,7 +5,7 @@
 set -euo pipefail
 
 VER=${1:-}
-REPOSITORY="${REPOSITORY:-git@github-vcf.devops.broadcom.net:vcf/etcd-recovery.git}"
+REPOSITORY="${REPOSITORY:-git@github.com:vmware/etcd-recovery.git}"
 
 if [ -z "$VER" ]; then
   echo "Usage: ${0} VERSION" >> /dev/stderr
@@ -70,7 +70,7 @@ function main {
       export GOARCH=${TARGET_ARCH}
 
       pushd ${proj} >/dev/null
-      GO_LDFLAGS="-s -w" ./build.sh
+      GO_LDFLAGS="-s -w" ./scripts/build.sh
       popd >/dev/null
 
       TARGET="${proj}-${VER}-${GOOS}-${GOARCH}"
