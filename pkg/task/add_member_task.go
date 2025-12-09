@@ -50,7 +50,7 @@ func (t *AddMemberTask) Run(client *ssh.Client) (string, error) {
 	}
 
 	// Start learner on learner node
-	if err := t.startLearner(client); err != nil {
+	if err = t.startLearner(client); err != nil {
 		return "", fmt.Errorf("failed to start learner: %w", err)
 	}
 
@@ -83,7 +83,7 @@ func (t *AddMemberTask) addOrPromoteLearner(masterClient *ssh.Client) (bool, err
 		return false, fmt.Errorf("failed to get etcd container ID: %w", err)
 	}
 
-	if err := t.waitForClusterOrMemberStatusHealthy(masterClient, containerID, true); err != nil {
+	if err = t.waitForClusterOrMemberStatusHealthy(masterClient, containerID, true); err != nil {
 		return false, fmt.Errorf("cluster health check failed: %w", err)
 	}
 
@@ -102,7 +102,7 @@ func (t *AddMemberTask) addOrPromoteLearner(masterClient *ssh.Client) (bool, err
 				return false, nil
 			}
 			log.Printf("Attempting to promote learner %s (%s)\n", t.Learner.Name, t.Learner.Host)
-			if err := t.promoteLearner(masterClient, containerID, fmt.Sprintf("%x", member.ID)); err != nil {
+			if err = t.promoteLearner(masterClient, containerID, fmt.Sprintf("%x", member.ID)); err != nil {
 				return false, fmt.Errorf("failed to promote learner: %w", err)
 			}
 			log.Printf("Successfully promoted learner %s (%s)\n", t.Learner.Name, t.Learner.Host)
@@ -207,7 +207,7 @@ func (t *AddMemberTask) startLearner(masterClient *ssh.Client) error {
 
 	log.Printf("Confirmed etcd is not running on %s (%s)\n", t.Learner.Name, t.Learner.Host)
 
-	if err := t.cleanupLocalDataOnLearner(learnerClient, t.Learner, "/var/lib/etcd/member"); err != nil {
+	if err = t.cleanupLocalDataOnLearner(learnerClient, t.Learner, "/var/lib/etcd/member"); err != nil {
 		return fmt.Errorf("failed to cleanup data directory: %w", err)
 	}
 	log.Printf("Successfully cleaned up etcd data directory on %s (%s)\n", t.Learner.Name, t.Learner.Host)

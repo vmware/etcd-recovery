@@ -17,7 +17,6 @@ import (
 
 	clientv3 "go.etcd.io/etcd/client/v3"
 	corev1 "k8s.io/api/core/v1"
-
 	"sigs.k8s.io/yaml"
 
 	"github.com/vmware/etcd-recovery/pkg/ssh"
@@ -87,7 +86,8 @@ func (t *CreateSingleMemberClusterTask) Run(client *ssh.Client) (string, error) 
 		}
 
 		if isManifestChanged {
-			etcdYamlNoForce, err := yaml.Marshal(&pod)
+			var etcdYamlNoForce []byte
+			etcdYamlNoForce, err = yaml.Marshal(&pod)
 			if err != nil {
 				return memberID, err
 			}
@@ -107,7 +107,8 @@ func (t *CreateSingleMemberClusterTask) Run(client *ssh.Client) (string, error) 
 			// update old container ID
 			waitForEtcdRunningTask.OldContainerID = oldContainerID
 
-			newContainerID, err := waitForEtcdRunningTask.Run(client)
+			var newContainerID string
+			newContainerID, err = waitForEtcdRunningTask.Run(client)
 			if err != nil {
 				return memberID, fmt.Errorf("etcd did not restart: %w", err)
 			}
@@ -180,7 +181,7 @@ func (t *CreateSingleMemberClusterTask) Run(client *ssh.Client) (string, error) 
 		}
 
 		// Wait for etcd to become healthy
-		if err := waitForEtcdHealthyCommandTask(client, containerID); err != nil {
+		if err = waitForEtcdHealthyCommandTask(client, containerID); err != nil {
 			return memberID, fmt.Errorf("etcd did not become healthy: %w", err)
 		}
 
@@ -195,12 +196,12 @@ func (t *CreateSingleMemberClusterTask) Run(client *ssh.Client) (string, error) 
 			return memberID, fmt.Errorf("failed to marshal manifest: %w", err)
 		}
 		tmpNoForce := filepath.Join(os.TempDir(), "etcd-no-force.yaml")
-		if err := os.WriteFile(tmpNoForce, etcdYamlNoForce, 0o644); err != nil {
+		if err = os.WriteFile(tmpNoForce, etcdYamlNoForce, 0o644); err != nil {
 			return memberID, fmt.Errorf("failed to write temp manifest: %w", err)
 		}
 
 		// Upload manifest without --force-new-cluster
-		if err := client.Upload(tmpNoForce, "/etc/kubernetes/manifests/etcd.yaml"); err != nil {
+		if err = client.Upload(tmpNoForce, "/etc/kubernetes/manifests/etcd.yaml"); err != nil {
 			return memberID, fmt.Errorf("failed to upload manifest: %w", err)
 		}
 

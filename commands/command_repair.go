@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/vmware/etcd-recovery/pkg/cliui"
-
 	"github.com/vmware/etcd-recovery/pkg/config"
 	"github.com/vmware/etcd-recovery/pkg/plan"
 	"github.com/vmware/etcd-recovery/pkg/task"
