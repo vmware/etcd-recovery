@@ -21,7 +21,7 @@ import (
 func NewCommandExecute() *cobra.Command {
 	return &cobra.Command{
 		Use:   "exec",
-		Short: "Excecute command against host(s)",
+		Short: "Execute command against host(s)",
 		Run:   executeCommandFunc,
 	}
 }

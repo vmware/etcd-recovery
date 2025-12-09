@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"github.com/pkg/sftp"
-
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ssh"
 )
