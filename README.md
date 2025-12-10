@@ -106,6 +106,8 @@ Note:
   unpause it after the recovery is complete.
 - Before taking a backup, stop the etcd on each control plane VM by moving the manifest file (`/etc/kubernetes/manifests/etcd.yaml`)
   to another location, for example, `~/etcd.yaml`. This will cause kubelet to stop the etcd container automatically.
+- etcd-recovery requires the [etcd-diagnosis](https://github.com/vmware/etcd-diagnosis) tool. Please download the etcd-diagnosis and
+  put the binary in the same directory as etcd-recovery.
 
 ### Step 1: Prepare the configuration file
 
