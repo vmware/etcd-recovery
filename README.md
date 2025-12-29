@@ -117,11 +117,11 @@ List all control plane VMs that will participate in the recovered etcd cluster i
 
 Run the command below to identify the VM with the highest `commit-index`. This VM will be used in the next step.
 
-> Note: All `etcd-recovery` commands read `./hosts.json` by default if the `--host` flag is not specified.
-You only need to specify `--host` if using a different file.
+> Note: All `etcd-recovery` commands read `./hosts.json` by default if the `--config` (or `-c`) flag is not specified.
+You only need to specify `--config` (or `-c`) if using a different file.
 
 ```
-$ etcd-recovery select -v --host hosts.json
+$ etcd-recovery select -v -c hosts.json
 ```
 
 ### Step 3: Repair the cluster
