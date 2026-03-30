@@ -5,8 +5,6 @@
 package commands
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
@@ -18,8 +16,6 @@ const (
 var (
 	configFile string
 	verbose    bool
-	repairMode string
-	userCmd    string
 
 	rootCmd = &cobra.Command{
 		Use:   cliName,
@@ -30,8 +26,6 @@ var (
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "hosts.json", "path to etcd cluster hosts config file")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "enable verbose output")
-	rootCmd.PersistentFlags().StringVarP(&repairMode, "mode", "m", "both", fmt.Sprintf("etcd cluster repair mode, valid modes are: %v", validModes))
-	rootCmd.PersistentFlags().StringVarP(&userCmd, "command", "e", "", "command to execute against target host(s)")
 
 	rootCmd.AddCommand(
 		NewCommandVersion(),

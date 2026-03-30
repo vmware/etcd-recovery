@@ -19,6 +19,8 @@ import (
 var validModes = []string{"add", "create", "both"}
 
 func NewCommandRepair() *cobra.Command {
+	var repairMode string
+
 	cmd := &cobra.Command{
 		Use:   "repair",
 		Short: "Perform etcd repair operations",
@@ -61,6 +63,8 @@ Supported Modes:
 			}
 		},
 	}
+
+	cmd.Flags().StringVarP(&repairMode, "mode", "m", "both", fmt.Sprintf("etcd cluster repair mode, valid modes are: %v", validModes))
 
 	return cmd
 }

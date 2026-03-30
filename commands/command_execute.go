@@ -19,14 +19,22 @@ import (
 // Runs command against single host if user selects specific host
 // Runs command against all hosts if user selects all
 func NewCommandExecute() *cobra.Command {
-	return &cobra.Command{
+	var userCmd string
+
+	cmd := &cobra.Command{
 		Use:   "exec",
 		Short: "Execute command against host(s)",
-		Run:   executeCommandFunc,
+		Run: func(cmd *cobra.Command, args []string) {
+			executeCommandFunc(cmd, args, userCmd)
+		},
 	}
+
+	cmd.Flags().StringVarP(&userCmd, "command", "e", "", "command to execute against target host(s)")
+
+	return cmd
 }
 
-func executeCommandFunc(cmd *cobra.Command, args []string) {
+func executeCommandFunc(_ *cobra.Command, _ []string, userCmd string) {
 	hosts, err := config.ParseHostFromFile(configFile)
 	if err != nil {
 		log.Fatalf("Error parsing hosts config file: %v", err)

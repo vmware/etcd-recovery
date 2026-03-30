@@ -13,20 +13,58 @@ Usage:
 
 Available Commands:
   completion  Generate the autocompletion script for the specified shell
-  exec        Excecute command against host(s)
+  exec        Execute command against host(s)
   help        Help about any command
   repair      Perform etcd repair operations
   select      Select the best member to recover the cluster from
   version     Prints the version of etcd-recovery
 
 Flags:
-  -e, --command string   command to execute against target host(s)
   -c, --config string    path to etcd cluster hosts config file (default "hosts.json")
   -h, --help             help for etcd-recovery
-  -m, --mode string      etcd cluster repair mode, valid modes are: [add create both] (default "both")
   -v, --verbose          enable verbose output
 
 Use "etcd-recovery [command] --help" for more information about a command.
+```
+
+The `exec` subcommand accepts a `--command` flag specific to it:
+
+```
+$ ./etcd-recovery exec -h
+Execute command against host(s)
+
+Usage:
+  etcd-recovery exec [flags]
+
+Flags:
+  -e, --command string   command to execute against target host(s)
+  -h, --help             help for exec
+
+Global Flags:
+  -c, --config string    path to etcd cluster hosts config file (default "hosts.json")
+  -v, --verbose          enable verbose output
+```
+
+The `repair` subcommand accepts a `--mode` flag specific to it:
+
+```
+$ ./etcd-recovery repair -h
+Perform etcd repair operations on target VMs.
+Supported Modes:
+  - add: Add a new member to an existing cluster
+  - create: Creates a single-member etcd cluster
+  - both: Run both create and add actions sequentially
+
+Usage:
+  etcd-recovery repair [flags]
+
+Flags:
+  -h, --help          help for repair
+  -m, --mode string   etcd cluster repair mode, valid modes are: [add create both] (default "both")
+
+Global Flags:
+  -c, --config string    path to etcd cluster hosts config file (default "hosts.json")
+  -v, --verbose          enable verbose output
 ```
 
 ## Recovery Workflow
@@ -117,7 +155,7 @@ List all control plane VMs that will participate in the recovered etcd cluster i
 
 Run the command below to identify the VM with the highest `commit-index`. This VM will be used in the next step.
 
-> Note: All `etcd-recovery` commands read `./hosts.json` by default if the `--config` (or `-c`) flag is not specified.
+> Note: All `etcd-recovery` commands read `./hosts.json` by default if the `--config` (or `-c`) global flag is not specified.
 You only need to specify `--config` (or `-c`) if using a different file.
 
 ```
