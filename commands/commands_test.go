@@ -21,7 +21,7 @@ func TestExecCommandHasCommandFlag(t *testing.T) {
 	flag := execCmd.Flags().Lookup("command")
 	require.NotNil(t, flag, "--command flag should be defined on exec subcommand")
 	assert.Equal(t, "e", flag.Shorthand, "--command shorthand should be -e")
-	assert.Equal(t, "", flag.DefValue, "--command default value should be empty string")
+	assert.Empty(t, flag.DefValue, "--command default value should be empty string")
 
 	rootFlag := rootCmd.PersistentFlags().Lookup("command")
 	assert.Nil(t, rootFlag, "--command flag should NOT be defined on root command")
@@ -151,7 +151,7 @@ func TestRepairCommandModeFlagAcceptsValidValues(t *testing.T) {
 		t.Run(mode, func(t *testing.T) {
 			repairCmd := NewCommandRepair()
 			err := repairCmd.Flags().Set("mode", mode)
-			assert.NoError(t, err, "setting --mode to %q should not return an error", mode)
+			require.NoError(t, err, "setting --mode to %q should not return an error", mode)
 			got, err := repairCmd.Flags().GetString("mode")
 			require.NoError(t, err)
 			assert.Equal(t, mode, got)
