@@ -2,7 +2,7 @@
 // Broadcom Confidential. The term "Broadcom" refers to Broadcom Inc.
 // and/or its subsidiaries.
 
-package version
+package verinfo
 
 var (
 	Version = "0.1.0"

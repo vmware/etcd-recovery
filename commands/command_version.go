@@ -10,7 +10,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/vmware/etcd-recovery/version"
+	"github.com/vmware/etcd-recovery/verinfo"
 )
 
 // NewCommandVersion prints out the version of etcd-diagnosis.
@@ -23,8 +23,8 @@ func NewCommandVersion() *cobra.Command {
 }
 
 func versionCommandFunc(cmd *cobra.Command, args []string) {
-	fmt.Printf("etcd-recovery version: %s\n", version.Version)
-	fmt.Printf("Git SHA: %s\n", version.GitSHA)
+	fmt.Printf("etcd-recovery version: %s\n", verinfo.Version)
+	fmt.Printf("Git SHA: %s\n", verinfo.GitSHA)
 	fmt.Printf("Go Version: %s\n", runtime.Version())
 	fmt.Printf("Go OS/Arch: %s/%s\n", runtime.GOOS, runtime.GOARCH)
 }
