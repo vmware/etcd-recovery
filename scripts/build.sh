@@ -5,7 +5,7 @@
 set -euo pipefail
 
 GIT_SHA=$(git rev-parse --short HEAD || echo "GitNotFound")
-VERSION_SHA="github.com/vmware/etcd-recovery/version.GitSHA"
+VERSION_SHA="github.com/vmware/etcd-recovery/verinfo.GitSHA"
 
 # use go env if noset
 GOOS=${GOOS:-$(go env GOOS)}
