@@ -21,7 +21,7 @@ import (
 
 	"github.com/vmware/etcd-recovery/pkg/cliui"
 	"github.com/vmware/etcd-recovery/pkg/config"
-	"github.com/vmware/etcd-recovery/pkg/ssh"
+	"github.com/vmware/etcd-recovery/pkg/transport"
 )
 
 type AddMemberTask struct {
@@ -35,7 +35,7 @@ func (t *AddMemberTask) Name() string {
 	return "AddMemberTask"
 }
 
-func (t *AddMemberTask) Run(client *ssh.Client) (string, error) {
+func (t *AddMemberTask) Run(client transport.Client) (string, error) {
 	log.Printf("Starting AddMemberTask for learner %s (%s)\n", t.Learner.Name, t.Learner.Host)
 
 	// Add or promote learner on master node
@@ -72,7 +72,7 @@ func (t *AddMemberTask) Run(client *ssh.Client) (string, error) {
 // Returned values:
 //   - bool: true means a learner is promoted; false means a learner is added
 //   - error: error if any
-func (t *AddMemberTask) addOrPromoteLearner(masterClient *ssh.Client) (bool, error) {
+func (t *AddMemberTask) addOrPromoteLearner(masterClient transport.Client) (bool, error) {
 	log.Printf("AddOrPromoteLearner: checking cluster health and member status\n")
 	var member *etcdserverpb.Member
 	var memberID uint64
@@ -126,7 +126,7 @@ func (t *AddMemberTask) addOrPromoteLearner(masterClient *ssh.Client) (bool, err
 	return false, nil
 }
 
-func (t *AddMemberTask) handleOtherLearnersIfExists(masterClient *ssh.Client, containerID string) error {
+func (t *AddMemberTask) handleOtherLearnersIfExists(masterClient transport.Client, containerID string) error {
 	// check for other learners if exists?
 	otherLearnerMembers := t.fetchLearnerMembers(masterClient, containerID)
 	if len(otherLearnerMembers) == 0 {
@@ -169,7 +169,7 @@ func (t *AddMemberTask) isKnownHost(peerURL string) bool {
 	return isKnownHost
 }
 
-func (t *AddMemberTask) removeMember(client *ssh.Client, containerID string, memberID string) error {
+func (t *AddMemberTask) removeMember(client transport.Client, containerID string, memberID string) error {
 	log.Printf("Removing member %s", memberID)
 	out, err := t.execEtcdctl(client, containerID, "member", "remove", memberID)
 	if err != nil {
@@ -183,14 +183,8 @@ func (t *AddMemberTask) removeMember(client *ssh.Client, containerID string, mem
 	return nil
 }
 
-func (t *AddMemberTask) startLearner(masterClient *ssh.Client) error {
-	learnerClient, err := ssh.NewClient(&ssh.Config{
-		User:                 t.Learner.Username,
-		Host:                 t.Learner.Host,
-		Password:             t.Learner.Password,
-		PrivateKeyPath:       t.Learner.PrivateKey,
-		PrivateKeyPassphrase: t.Learner.Passphrase,
-	})
+func (t *AddMemberTask) startLearner(masterClient transport.Client) error {
+	learnerClient, err := t.Learner.NewClient()
 	if err != nil {
 		return fmt.Errorf("failed to connect to Learner node: %w", err)
 	}
@@ -241,7 +235,7 @@ func (t *AddMemberTask) startLearner(masterClient *ssh.Client) error {
 	return nil
 }
 
-func (t *AddMemberTask) querryMember(client *ssh.Client, containerID string) (member *etcdserverpb.Member, err error) {
+func (t *AddMemberTask) querryMember(client transport.Client, containerID string) (member *etcdserverpb.Member, err error) {
 	membersResp, err := t.getMembers(client, containerID)
 	if err != nil {
 		return nil, err
@@ -265,7 +259,7 @@ func (t *AddMemberTask) querryMember(client *ssh.Client, containerID string) (me
 	return nil, nil
 }
 
-func (t *AddMemberTask) fetchLearnerMembers(client *ssh.Client, containerID string) (members []*etcdserverpb.Member) {
+func (t *AddMemberTask) fetchLearnerMembers(client transport.Client, containerID string) (members []*etcdserverpb.Member) {
 	membersResp, err := t.getMembers(client, containerID)
 	if err != nil {
 		log.Printf("failed to get members list: %v", err)
@@ -292,7 +286,7 @@ func extractIPFromPeerURL(rawURL string) string {
 	return u.Hostname()
 }
 
-func (t *AddMemberTask) getMembers(client *ssh.Client, containerID string) (*clientv3.MemberListResponse, error) {
+func (t *AddMemberTask) getMembers(client transport.Client, containerID string) (*clientv3.MemberListResponse, error) {
 	out, err := t.execEtcdctl(client, containerID, "member", "list", "-w", "json")
 	if err != nil {
 		return nil, fmt.Errorf("failed to list members: %w", err)
@@ -306,7 +300,7 @@ func (t *AddMemberTask) getMembers(client *ssh.Client, containerID string) (*cli
 	return &resp, nil
 }
 
-func (t *AddMemberTask) addMemberToCluster(masterClient *ssh.Client, containerID string, isLearner bool) (uint64, error) {
+func (t *AddMemberTask) addMemberToCluster(masterClient transport.Client, containerID string, isLearner bool) (uint64, error) {
 	peerURLs := fmt.Sprintf("https://%s:2380", t.Learner.Host)
 	learnerMemberName, err := t.Learner.FetchMemberName()
 	if err != nil {
@@ -334,7 +328,7 @@ func (t *AddMemberTask) addMemberToCluster(masterClient *ssh.Client, containerID
 	return addResponse.Member.ID, nil
 }
 
-func (t *AddMemberTask) getEtcdContainerID(client *ssh.Client) (string, error) {
+func (t *AddMemberTask) getEtcdContainerID(client transport.Client) (string, error) {
 	waitTask := &WaitForEtcdRunningTask{
 		Description:      "Get etcd container ID",
 		TimeoutSec:       300,
@@ -349,7 +343,7 @@ func (t *AddMemberTask) getEtcdContainerID(client *ssh.Client) (string, error) {
 	return strings.TrimSpace(containerID), nil
 }
 
-func (t *AddMemberTask) waitForClusterOrMemberStatusHealthy(client *ssh.Client, containerID string, cluster bool) error {
+func (t *AddMemberTask) waitForClusterOrMemberStatusHealthy(client transport.Client, containerID string, cluster bool) error {
 	msg := "current member"
 	args := []string{"endpoint", "status", "-w", "json"}
 	if cluster {
@@ -378,7 +372,7 @@ func (t *AddMemberTask) waitForClusterOrMemberStatusHealthy(client *ssh.Client, 
 	return fmt.Errorf("%s did not become healthy after %d attempts", msg, maxRetries)
 }
 
-func (t *AddMemberTask) buildInitialClusterString(masterClient *ssh.Client) (string, error) {
+func (t *AddMemberTask) buildInitialClusterString(masterClient transport.Client) (string, error) {
 	containerID, err := t.getEtcdContainerID(masterClient)
 	if err != nil {
 		return "", fmt.Errorf("failed to get etcd container ID: %w", err)
@@ -415,7 +409,7 @@ func (t *AddMemberTask) buildInitialClusterString(masterClient *ssh.Client) (str
 	return strings.Join(parts, ","), nil
 }
 
-func (t *AddMemberTask) promoteLearner(client *ssh.Client, containerID string, MemberID string) error {
+func (t *AddMemberTask) promoteLearner(client transport.Client, containerID string, MemberID string) error {
 	maxRetries := 50
 	retryInterval := 5 * time.Second
 
@@ -441,7 +435,7 @@ func (t *AddMemberTask) promoteLearner(client *ssh.Client, containerID string, M
 	return fmt.Errorf("failed to promote member after %d attempts: %w", maxRetries, lastErr)
 }
 
-func (t *AddMemberTask) cleanupLocalDataOnLearner(client *ssh.Client, learner *config.Host, dataDir string) error {
+func (t *AddMemberTask) cleanupLocalDataOnLearner(client transport.Client, learner *config.Host, dataDir string) error {
 	dataDir = strings.TrimSuffix(dataDir, "/")
 	if dataDir == "" {
 		dataDir = "/var/lib/etcd/member"
@@ -475,7 +469,7 @@ func (t *AddMemberTask) cleanupLocalDataOnLearner(client *ssh.Client, learner *c
 }
 
 // execEtcdctl executes etcdctl command inside the container
-func (t *AddMemberTask) execEtcdctl(client *ssh.Client, containerID string, args ...string) (string, error) {
+func (t *AddMemberTask) execEtcdctl(client transport.Client, containerID string, args ...string) (string, error) {
 	cmd := fmt.Sprintf("sudo crictl exec %s etcdctl --endpoints=https://127.0.0.1:2379 "+
 		"--cert /etc/kubernetes/pki/etcd/healthcheck-client.crt "+
 		"--key /etc/kubernetes/pki/etcd/healthcheck-client.key "+
@@ -518,7 +512,7 @@ func validateClusterStatus(output []byte) bool {
 	return true
 }
 
-func (t *AddMemberTask) updateManifest(learnerClient *ssh.Client, initialCluster, initialClusterState string) (string, error) {
+func (t *AddMemberTask) updateManifest(learnerClient transport.Client, initialCluster, initialClusterState string) (string, error) {
 	if t.Learner.BackedupManifest == "" {
 		return "", fmt.Errorf("backup manifest path not provided in hosts.json")
 	}

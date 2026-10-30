@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/vmware/etcd-recovery/pkg/config"
-	"github.com/vmware/etcd-recovery/pkg/ssh"
 	"github.com/vmware/etcd-recovery/pkg/task"
+	"github.com/vmware/etcd-recovery/pkg/transport"
 )
 
 // MockTask implements the Task interface for testing
@@ -21,7 +21,7 @@ type mockTask struct {
 }
 
 func (m *mockTask) Name() string { return "MockTask" }
-func (m *mockTask) Run(client *ssh.Client) (string, error) {
+func (m *mockTask) Run(client transport.Client) (string, error) {
 	if m.shouldFail {
 		return "", errors.New("mock task failure")
 	}
