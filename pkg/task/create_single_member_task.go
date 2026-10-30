@@ -19,7 +19,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
 
-	"github.com/vmware/etcd-recovery/pkg/ssh"
+	"github.com/vmware/etcd-recovery/pkg/transport"
 )
 
 type CreateSingleMemberClusterTask struct {
@@ -31,7 +31,7 @@ func (t *CreateSingleMemberClusterTask) Name() string {
 	return "CreateSingleMemberCluster"
 }
 
-func (t *CreateSingleMemberClusterTask) Run(client *ssh.Client) (string, error) {
+func (t *CreateSingleMemberClusterTask) Run(client transport.Client) (string, error) {
 	var memberID string
 	var isSingleMember bool
 	// steps to create single-member etcd cluster
@@ -229,7 +229,7 @@ func (t *CreateSingleMemberClusterTask) Run(client *ssh.Client) (string, error) 
 	return memberID, nil
 }
 
-func isSingleMemberCluster(client *ssh.Client, containerID string) (string, bool) {
+func isSingleMemberCluster(client transport.Client, containerID string) (string, bool) {
 	// prepare command task to check if single member cluster
 	// use crictl exec to run etcdctl member list inside the etcd container
 	singleMemberTask := &CommandTask{
@@ -258,7 +258,7 @@ func isSingleMemberCluster(client *ssh.Client, containerID string) (string, bool
 	return strconv.FormatUint(memberListResponse.Header.MemberId, 10), false
 }
 
-func waitForEtcdHealthyCommandTask(client *ssh.Client, containerID string) error {
+func waitForEtcdHealthyCommandTask(client transport.Client, containerID string) error {
 	waitForEtcdToBeHealthyCommandTask := CommandTask{
 		Description: "Wait for etcd to be healthy",
 		Command:     fmt.Sprintf("sudo crictl exec %s etcdctl --endpoints=127.0.0.1:2379 --cert /etc/kubernetes/pki/etcd/healthcheck-client.crt --key /etc/kubernetes/pki/etcd/healthcheck-client.key --cacert /etc/kubernetes/pki/etcd/ca.crt endpoint health --cluster", strings.TrimSpace(containerID)),

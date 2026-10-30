@@ -4,19 +4,9 @@
 
 package plan
 
-import (
-	"github.com/vmware/etcd-recovery/pkg/ssh"
-)
-
 func (p *ExecutionPlan) Execute() error {
 	for _, session := range p.Sessions {
-		client, err := ssh.NewClient(&ssh.Config{
-			User:                 session.Host.Username,
-			Host:                 session.Host.Host,
-			Password:             session.Host.Password,
-			PrivateKeyPath:       session.Host.PrivateKey,
-			PrivateKeyPassphrase: session.Host.Passphrase,
-		})
+		client, err := session.Host.NewClient()
 		if err != nil {
 			return err
 		}

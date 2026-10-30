@@ -5,3 +5,5 @@
 pkg/ssh/testdata/*.txt
 pkg/ssh/testdata/tmp
 .DS_store
+/hosts.json
+/bin/hosts.json
