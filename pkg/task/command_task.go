@@ -13,7 +13,7 @@ import (
 
 	cryptoSSH "golang.org/x/crypto/ssh"
 
-	"github.com/vmware/etcd-recovery/pkg/ssh"
+	"github.com/vmware/etcd-recovery/pkg/transport"
 )
 
 type CommandTask struct {
@@ -35,7 +35,7 @@ func (t *CommandTask) Name() string {
 	return "CommandTask"
 }
 
-func (t *CommandTask) Run(client *ssh.Client) (string, error) {
+func (t *CommandTask) Run(client transport.Client) (string, error) {
 	var (
 		start    = time.Now()
 		timeout  = 10 * time.Second // sensible default timeout

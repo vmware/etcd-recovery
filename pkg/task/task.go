@@ -4,9 +4,9 @@
 
 package task
 
-import "github.com/vmware/etcd-recovery/pkg/ssh"
+import "github.com/vmware/etcd-recovery/pkg/transport"
 
 type Task interface {
 	Name() string
-	Run(client *ssh.Client) (string, error)
+	Run(client transport.Client) (string, error)
 }

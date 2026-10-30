@@ -13,7 +13,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/vmware/etcd-recovery/pkg/config"
-	"github.com/vmware/etcd-recovery/pkg/ssh"
 )
 
 // NewCommandSelect selects the best member for cluster recovery.
@@ -44,19 +43,13 @@ func selectCommandFunc(cmd *cobra.Command, args []string) {
 	for _, h := range hostCfg {
 		printLog("Connecting to host (%s: %s)\n", h.Name, h.Host)
 
-		client, err := ssh.NewClient(&ssh.Config{
-			User:                 h.Username,
-			Host:                 h.Host,
-			Password:             h.Password,
-			PrivateKeyPath:       h.PrivateKey,
-			PrivateKeyPassphrase: h.Passphrase,
-		})
+		client, err := h.NewClient()
 		if err != nil {
 			log.Printf("Error creating ssh client to (%s: %s): %v\n", h.Name, h.Host, err)
 			continue
 		}
 
-		targetPath := getTargetPath(h.Username)
+		targetPath := getTargetPath(h.LoginUser())
 		_, err = client.Run(fmt.Sprintf("%s version", targetPath))
 		if err != nil {
 			printLog("Uploading etcd-diagnosis to %s on host (%s: %s)\n", targetPath, h.Name, h.Host)
