@@ -9,7 +9,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/vmware/etcd-recovery/pkg/ssh"
+	"github.com/vmware/etcd-recovery/pkg/transport"
 )
 
 // WaitForEtcdRunningTask waits for etcd container to be running
@@ -24,7 +24,7 @@ func (t *WaitForEtcdRunningTask) Name() string {
 	return "WaitForEtcdRunningTask"
 }
 
-func (t *WaitForEtcdRunningTask) Run(client *ssh.Client) (string, error) {
+func (t *WaitForEtcdRunningTask) Run(client transport.Client) (string, error) {
 	task := &CommandTask{
 		Description: "Wait for etcd container to be running",
 		Command:     "sudo crictl ps --label io.kubernetes.container.name=etcd -q | head -n 1",

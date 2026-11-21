@@ -12,7 +12,6 @@ import (
 
 	"github.com/vmware/etcd-recovery/pkg/cliui"
 	"github.com/vmware/etcd-recovery/pkg/config"
-	"github.com/vmware/etcd-recovery/pkg/ssh"
 )
 
 // NewCommandExecute executes command against host(s)
@@ -81,13 +80,7 @@ func executeCommandFunc(_ *cobra.Command, _ []string, userCmd string) {
 func executeUserCommand(host *config.Host, command string) ([]byte, error) {
 	printLog("Connecting to host (%s: %s)\n", host.Name, host.Host)
 
-	client, err := ssh.NewClient(&ssh.Config{
-		User:                 host.Username,
-		Host:                 host.Host,
-		Password:             host.Password,
-		PrivateKeyPath:       host.PrivateKey,
-		PrivateKeyPassphrase: host.Passphrase,
-	})
+	client, err := host.NewClient()
 	if err != nil {
 		log.Fatalf("Error creating ssh client to (%s: %s): %v", host.Name, host.Host, err)
 	}

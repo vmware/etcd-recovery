@@ -91,17 +91,20 @@ The high-level deployment architecture is shown below.
 ## Configuration
 
 Define all control plane VMs that will ultimately become members of the recovered etcd cluster in a `hosts.json` file.
-The file contains fields listed below. For each VM, specify a `username` (required) and either a `password` or a
-`privateKey` for SSH access. The `password` and `privateKey` are mutually exclusive.
+The file contains fields listed below. For each VM, configure exactly one transport: an `ssh` object or a `vmtools` object
+(see below). For SSH, specify a `username` (required) and either a `password` or a `private_key`. The `password`
+and `private_key` are mutually exclusive.
+
+> **Breaking change:** SSH settings moved from the top level of a host entry into an `ssh` object. Configs that
+> still have `username`, `password`, `private_key` or `passphrase` at the top level are rejected.
 
 | Field Name       | Description                                                                                                                                                                                                                   |
 |------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | name             | A human-readable and memorable identifier                                                                                                                                                                                     |
 | member_name      | The unique name assigned to the etcd member. This value corresponds to the `--name` flag in the `/etc/kubernetes/manifests/etcd.yaml` file on each control plane VM. **Optional**; if not set, defaults to the VM's hostname. |
 | host             | The IP address of the control plane VM                                                                                                                                                                                        |
-| username         | Username to SSH into the control plane VM                                                                                                                                                                                     |
-| password         | Password to SSH into the control plane VM                                                                                                                                                                                     |
-| privateKey       | Path to the private key used to SSH into the control plane VM. **Mutually exclusive** with `password`.                                                                                                                        |
+| ssh              | SSH settings: `username`, `password` or `private_key`, and optional `passphrase`. Mutually exclusive with `vmtools`.                                                                                                          |
+| vmtools          | VMware Tools settings, see below. Mutually exclusive with `ssh`.                                                                                                                                                              |
 | backedUpManifest | The path to the backed-up etcd manifest on the control plane VM, i.e. `/root/etcd.yaml`                                                                                                                                       |
 
 Example:
@@ -110,22 +113,89 @@ Example:
     {
         "name": "etcd-vm1",
         "host": "10.100.72.7",
-        "username": "root",
-        "password": "changeme",
+        "ssh": {"username": "root", "password": "changeme"},
         "backedup_manifest": "/root/etcd.yaml"
     },
     {
         "name": "etcd-vm2",
         "host": "10.100.72.8",
-        "username": "root",
-        "password": "changeme",
+        "ssh": {"username": "root", "password": "changeme"},
         "backedup_manifest": "/root/etcd.yaml"
     },
     {
         "name": "etcd-vm3",
         "host": "10.100.72.9",
-        "username": "root",
-        "password": "changeme",
+        "ssh": {"username": "root", "password": "changeme"},
+        "backedup_manifest": "/root/etcd.yaml"
+    }
+]
+```
+
+### Alternative transport: VMware Tools (no SSH)
+
+Instead of SSH, etcd-recovery can reach a VM through the vSphere Guest Operations API, which uses open-vm-tools
+(`vmtoolsd`) running in the guest. This needs no guest networking and no sshd. Add a `vmtools` object instead of an
+`ssh` object.
+`host` is still required and must be the VM's IP address, since it is used to build the etcd peer URLs.
+
+| Field (under `vmtools`)            | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+|------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| vcenter_url                        | vCenter or ESXi endpoint, i.e. `https://vc.example.com/sdk`                                                                                                                                                                                                                                                                                                                                                                                                   |
+| vcenter_username, vcenter_password | vCenter/ESXi credentials, need the `VirtualMachine.GuestOperations.*` privileges on the VM                                                                                                                                                                                                                                                                                                                                                                    |
+| vcenter_insecure                   | Skip TLS verification of vCenter and ESXi. **Optional**, defaults to `false`.                                                                                                                                                                                                                                                                                                                                                                                 |
+| vm                                 | Either the VM inventory path (starting with `/`, i.e. `/dc1/vm/etcd-vm1`) or the VM's UUID. If you use a UUID, the instance UUID (`config.instanceUuid`) is preferred: it is unique in vCenter. The BIOS UUID (`config.uuid`) is also accepted but may be duplicated by cloned VMs. Use [govc](https://github.com/vmware/govmomi/tree/main/govc) to find it: `govc find / -type m` lists the inventory paths, and `govc vm.info -json <vm>` shows both UUIDs. |
+| guest_username                     | Guest OS user that commands run as, i.e. `root`                                                                                                                                                                                                                                                                                                                                                                                                               |
+| guest_password                     | Guest OS password                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+
+Requirements: VMware Tools must be running in the guest, and the machine running etcd-recovery must reach vCenter
+and the ESXi hosts on port 443, since file transfers go to the ESXi host directly.
+
+File transfers run as `guest_username`. When that user cannot read or write a path (e.g. under `/root` or
+`/etc/kubernetes/manifests`), etcd-recovery retries through a temporary file in `/tmp` using `sudo`, the same as the
+SSH transport. This needs passwordless `sudo` for the guest user.
+
+```
+[
+    {
+        "name": "etcd-vm1",
+        "host": "10.144.67.142",
+        "vmtools": {
+            "vcenter_url": "https://vc.example.com/sdk",
+            "vcenter_username": "administrator@vsphere.local",
+            "vcenter_password": "changeme",
+            "vcenter_insecure": true,
+            "vm": "/folder-WCP_DC/WCP_DC/vm/Namespaces/supervisor/SupervisorControlPlaneVM (1)",
+            "guest_username": "root",
+            "guest_password": "changeme"
+        },
+        "backedup_manifest": "/root/etcd.yaml"
+    },
+    {
+        "name": "etcd-vm2",
+        "host": "10.144.67.182",
+        "vmtools": {
+            "vcenter_url": "https://vc.example.com/sdk",
+            "vcenter_username": "administrator@vsphere.local",
+            "vcenter_password": "changeme",
+            "vcenter_insecure": true,
+            "vm": "/folder-WCP_DC/WCP_DC/vm/Namespaces/supervisor/SupervisorControlPlaneVM (2)",
+            "guest_username": "root",
+            "guest_password": "changeme"
+        },
+        "backedup_manifest": "/root/etcd.yaml"
+    },
+    {
+        "name": "etcd-vm3",
+        "host": "10.144.68.115",
+        "vmtools": {
+            "vcenter_url": "https://vc.example.com/sdk",
+            "vcenter_username": "administrator@vsphere.local",
+            "vcenter_password": "changeme",
+            "vcenter_insecure": true,
+            "vm": "/folder-WCP_DC/WCP_DC/vm/Namespaces/supervisor/SupervisorControlPlaneVM (3)",
+            "guest_username": "root",
+            "guest_password": "changeme"
+        },
         "backedup_manifest": "/root/etcd.yaml"
     }
 ]

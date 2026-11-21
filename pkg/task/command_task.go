@@ -11,9 +11,7 @@ import (
 	"strings"
 	"time"
 
-	cryptoSSH "golang.org/x/crypto/ssh"
-
-	"github.com/vmware/etcd-recovery/pkg/ssh"
+	"github.com/vmware/etcd-recovery/pkg/transport"
 )
 
 type CommandTask struct {
@@ -35,7 +33,7 @@ func (t *CommandTask) Name() string {
 	return "CommandTask"
 }
 
-func (t *CommandTask) Run(client *ssh.Client) (string, error) {
+func (t *CommandTask) Run(client transport.Client) (string, error) {
 	var (
 		start    = time.Now()
 		timeout  = 10 * time.Second // sensible default timeout
@@ -57,7 +55,7 @@ func (t *CommandTask) Run(client *ssh.Client) (string, error) {
 		exitCode := 0
 		if err != nil {
 			// Try to extract exit code from error if possible
-			var ee *cryptoSSH.ExitError
+			var ee transport.ExitStatuser
 			if !errors.As(err, &ee) {
 				// Not an ExitError, treat as command execution failure
 				log.Printf("command '%s' execution failed: %v\n", t.Command, err)
