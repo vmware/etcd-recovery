@@ -11,7 +11,7 @@ require (
 	github.com/pkg/sftp v1.13.12
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
-	go.etcd.io/etcd/api/v3 v3.7.3
+	go.etcd.io/etcd/api/v3 v3.7.4
 	go.etcd.io/etcd/client/v3 v3.7.3
 	golang.org/x/crypto v0.59.0
 	k8s.io/api v0.37.2
