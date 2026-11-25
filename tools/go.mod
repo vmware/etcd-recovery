@@ -2,7 +2,7 @@ module github-vcf.devops.broadcom.net/vcf/etcd-diagnosis/tools
 
 go 1.26
 
-toolchain go1.26.8
+toolchain go1.26.11
 
 require github.com/golangci/golangci-lint/v2 v2.9.0
 
